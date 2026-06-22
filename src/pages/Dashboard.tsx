@@ -33,8 +33,8 @@ export function Dashboard() {
       </section>
 
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-slate-950">Distribuição de gastos</h3>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-bold text-slate-950 dark:text-slate-100">Distribuição de gastos</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -49,8 +49,8 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-slate-950">Receitas versus despesas</h3>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h3 className="mb-4 text-lg font-bold text-slate-950 dark:text-slate-100">Receitas versus despesas</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={comparisonData}>

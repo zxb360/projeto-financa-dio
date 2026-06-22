@@ -43,13 +43,13 @@ export function AIAssistant() {
   return (
     <>
       <PageHeader title="Assistente IA" description="Faça perguntas e receba orientações simuladas com base no seu perfil financeiro." />
-      <section className="flex min-h-[620px] flex-col rounded-xl border border-slate-200 bg-white shadow-sm">
+      <section className="flex min-h-[620px] flex-col rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-6">
           {messages.map((message) => (
             <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <p
                 className={`max-w-[82%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
-                  message.role === 'user' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-800'
+                  message.role === 'user' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100'
                 }`}
               >
                 {message.content}
@@ -57,11 +57,11 @@ export function AIAssistant() {
             </div>
           ))}
         </div>
-        <form onSubmit={handleSubmit} className="flex gap-3 border-t border-slate-200 p-4">
+        <form onSubmit={handleSubmit} className="flex gap-3 border-t border-slate-200 p-4 dark:border-slate-800">
           <input
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
-            className="min-w-0 flex-1 rounded-lg border border-slate-300 px-4 py-3"
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 px-4 py-3 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             placeholder="Pergunte sobre dívidas, metas ou gastos"
           />
           <button className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-700" type="submit">

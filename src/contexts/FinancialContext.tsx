@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { emptyFinancialProfile } from '../data/mockFinancialProfile'
 import type { FinancialProfile, Goal } from '../types/financial'
 
+/* eslint-disable react-refresh/only-export-components */
+
 // Tipos usados no contexto financeiro.
 interface FinancialContextValue {
   profile: FinancialProfile

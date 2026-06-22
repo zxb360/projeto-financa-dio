@@ -1,17 +1,21 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Moon, Sun } from 'lucide-react'
 import { useState, type InputHTMLAttributes } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { useFinancial } from '../contexts/FinancialContext'
+import { useTheme } from '../contexts/ThemeContext'
 import type { FinancialProfile } from '../types/financial'
 
 // Validação do formulário de onboarding usando Zod.
 // Cada campo é validado para garantir que o usuário insira dados mínimos aceitáveis.
+const fullNameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)+$/
+const textRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s.'-]+$/
+
 const onboardingSchema = z.object({
-  name: z.string().min(2, 'Informe seu nome'),
-  profession: z.string().min(2, 'Informe sua profissão'),
+  name: z.string().trim().regex(fullNameRegex, 'Informe seu nome completo').min(2, 'Informe seu nome'),
+  profession: z.string().trim().min(2, 'Informe sua profissão').regex(textRegex, 'Use apenas letras na profissão'),
   age: z.coerce.number().int().min(16, 'Informe uma idade válida'),
   salary: z.coerce.number().min(0),
   extraIncome: z.coerce.number().min(0),
@@ -40,6 +44,7 @@ export function Onboarding() {
   const [step, setStep] = useState(0)
   const navigate = useNavigate()
   const { completeOnboarding } = useFinancial()
+  const { theme, toggleTheme } = useTheme()
   const {
     register,
     handleSubmit,
@@ -120,30 +125,40 @@ export function Onboarding() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950">
+    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
       <section className="mx-auto max-w-3xl">
-        <div className="mb-8">
-          <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">FinCoach AI</p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">FinCoach AI</p>
           <h1 className="mt-2 text-3xl font-bold">Vamos entender sua vida financeira</h1>
-          <p className="mt-2 text-slate-600">Preencha as etapas abaixo para montar seu dashboard inicial.</p>
+            <p className="mt-2 text-slate-600 dark:text-slate-400">Preencha as etapas abaixo para montar seu dashboard inicial.</p>
+          </div>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            aria-label="Alternar tema"
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
         </div>
 
         <div className="mb-5 grid grid-cols-3 gap-2 md:grid-cols-6">
           {steps.map((label, index) => (
-            <div key={label} className={`rounded-lg px-3 py-2 text-center text-xs font-bold ${index <= step ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500'}`}>
+            <div key={label} className={`rounded-lg px-3 py-2 text-center text-xs font-bold ${index <= step ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 dark:bg-slate-900 dark:text-slate-400'}`}>
               {index + 1}
             </div>
           ))}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
+        <form onSubmit={handleSubmit(onSubmit)} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:p-7">
           <h2 className="mb-5 text-xl font-bold">{steps[step]}</h2>
           <div className="grid gap-4 md:grid-cols-2">
             {step === 0 && (
               <>
-                <Input label="Nome" error={errors.name?.message} {...register('name')} />
-                <Input label="Profissão" error={errors.profession?.message} {...register('profession')} />
-                <Input label="Idade" type="number" error={errors.age?.message} {...register('age')} />
+                <Input label="Nome" placeholder="Nome completo Ex: Maria Souza" error={errors.name?.message} {...register('name')} />
+                <Input label="Profissão" placeholder="Ex: Analista financeiro" error={errors.profession?.message} {...register('profession')} />
+                <Input label="Idade" placeholder="Ex: 3500" type="number" error={errors.age?.message} {...register('age')} />
               </>
             )}
             {step === 1 && (
@@ -179,8 +194,8 @@ export function Onboarding() {
             )}
             {step === 5 && (
               <label className="md:col-span-2">
-                <span className="text-sm font-medium text-slate-700">Sonhos e objetivos</span>
-                <textarea className="mt-1 min-h-36 w-full rounded-lg border border-slate-300 px-3 py-2" {...register('dreams')} />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Sonhos e objetivos</span>
+                <textarea className="mt-1 min-h-36 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" {...register('dreams')} />
                 {errors.dreams && <p className="mt-1 text-sm text-rose-600">{errors.dreams.message}</p>}
               </label>
             )}
@@ -191,7 +206,7 @@ export function Onboarding() {
               type="button"
               disabled={step === 0}
               onClick={() => setStep((currentStep) => Math.max(currentStep - 1, 0))}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-3 font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-3 font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200"
             >
               <ArrowLeft size={18} />
               Voltar
@@ -217,14 +232,15 @@ export function Onboarding() {
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string
   error?: string
+  placeholder?: string
 }
 
 // Componente reutilizável de campo de entrada com suporte a erro.
-function Input({ label, error, ...props }: InputProps) {
+function Input({ label, placeholder, error, ...props }: InputProps) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
-      <input className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" {...props} />
+      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
+      <input placeholder={placeholder} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" {...props} />
       {error && <p className="mt-1 text-sm text-rose-600">{error}</p>}
     </label>
   )

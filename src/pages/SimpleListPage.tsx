@@ -29,9 +29,9 @@ export function SimpleListPage({ title, description, items, emptyTitle, emptyDes
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {items.map((item) => (
-            <article key={item.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">{item.label}</p>
-              <p className="mt-2 text-2xl font-bold text-slate-950">{formatCurrency(item.value)}</p>
+            <article key={item.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</p>
+              <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-100">{formatCurrency(item.value)}</p>
             </article>
           ))}
         </div>

@@ -1,11 +1,18 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 * {
   box-sizing: border-box;
 }
 
 html {
   background: #f8fafc;
+}
+
+html.dark {
+  background: #020617;
+  color-scheme: dark;
 }
 
 body {
