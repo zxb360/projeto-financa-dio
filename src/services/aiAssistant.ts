@@ -16,12 +16,12 @@ const genAI = new GoogleGenAI({
 
 export async function analyzeFinancialProfile(question: string, profile: FinancialProfile) {
   try {
-    // Constrói um prompt detalhado para a IA com o perfil do usuário.
+    // Prompt para a IA com o perfil do usuário.
     const prompt = `
       Você é um assistente financeiro chamado FinCoach AI.
       Analise o seguinte perfil financeiro e responda à pergunta do usuário de forma clara, objetiva e amigável.
       Seja um coach financeiro que incentiva e guia o usuário para uma vida financeira mais saudável.
-      Use no máximo 100 palavras.
+      Use no máximo 150 palavras.
 
       **Perfil Financeiro:**
       - Nome: ${profile.user.name}
@@ -36,10 +36,6 @@ export async function analyzeFinancialProfile(question: string, profile: Financi
       **Pergunta do Usuário:**
       "${question}"
     `;
-
-    // Busca o modelo dinamicamente — evita erro na importação se o modelo não existir
-    // const modelName = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.0-flash';
-    // let model;
     
       const response = await genAI.models.generateContent({
         model: "gemini-2.5-flash",
@@ -53,10 +49,4 @@ export async function analyzeFinancialProfile(question: string, profile: Financi
       return `Erro ao inicializar o modelo: ${initError}. Verifique o nome do modelo e chame ModelService.ListModels para ver modelos suportados.`;
     }
 
-    // Gera o conteúdo usando o modelo
-  //   const result = await model.generateContent(prompt);
-  //   const response = result.response;
-  // } catch (error) {
-  //   return `Erro ao chamar a API Gemini: ${error}`;
-  // }
   }
