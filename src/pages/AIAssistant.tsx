@@ -22,18 +22,18 @@ export function AIAssistant() {
     },
   ])
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
     if (!question.trim()) {
       return
     }
 
-    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: question }
+    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: question };
     const answer: Message = {
       id: crypto.randomUUID(),
       role: 'assistant',
-      content: analyzeFinancialProfile(question, profile),
+      content: await analyzeFinancialProfile(question, profile),
     }
 
     setMessages((currentMessages) => [...currentMessages, userMessage, answer])
