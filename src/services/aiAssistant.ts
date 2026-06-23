@@ -1,29 +1,52 @@
-import type { FinancialProfile } from '../types/financial'
+import type { FinancialProfile } from '../types/financial';
+import { GoogleGenAI } from "@google/genai";
 
-// Função simples que gera uma resposta baseada no perfil financeiro e na pergunta do usuário.
-// No futuro, aqui pode ser substituído por uma chamada a uma API de IA real.
-export function analyzeFinancialProfile(question: string, profile: FinancialProfile) {
-  const topDebt = [...profile.debts].sort((a, b) => b.amount - a.amount)[0]
-  const hasCreditCardDebt = profile.debts.some((debt) => debt.type.includes('Cartão') && debt.amount > 0)
-  const lowerQuestion = question.toLowerCase()
 
-  // Prioriza resposta sobre dívidas se houver dívida de cartão ou se a pergunta mencionar dívidas.
-  if (hasCreditCardDebt || lowerQuestion.includes('dívida')) {
-    return 'Com base nos seus dados, recomendamos priorizar a quitação das dívidas de cartão de crédito e negociar taxas antes de assumir novos parcelamentos.'
-  }
+// Acessa a variável de ambiente do Vite
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-  // Dicas para metas e sonhos.
-  if (lowerQuestion.includes('meta') || lowerQuestion.includes('sonho')) {
-    return 'Transforme seus objetivos em metas mensais pequenas. Separe primeiro o valor da meta e depois ajuste gastos variáveis como lazer e compras por impulso.'
-  }
-
-  // Dicas para investimento.
-  if (lowerQuestion.includes('invest')) {
-    return 'Antes de investir mais, fortaleça sua reserva de emergência. Depois disso, escolha investimentos simples e compatíveis com seu prazo.'
-  }
-
-  // Resposta genérica baseada na maior dívida.
-  return topDebt
-    ? `Seu maior ponto de atenção hoje é ${topDebt.type}. Uma boa estratégia inicial é direcionar qualquer renda extra para reduzir esse saldo.`
-    : 'Seu perfil está caminhando bem. Continue registrando entradas, gastos e metas para receber recomendações mais precisas.'
+if (!apiKey) {
+  throw new Error("A chave VITE_GEMINI_API_KEY não está definida no arquivo .env");
 }
+
+// Inicializa a instância do SDK
+const genAI = new GoogleGenAI({
+  apiKey,
+});
+
+export async function analyzeFinancialProfile(question: string, profile: FinancialProfile) {
+  try {
+    // Prompt para a IA com o perfil do usuário.
+    const prompt = `
+      Você é um assistente financeiro chamado FinCoach AI.
+      Analise o seguinte perfil financeiro e responda à pergunta do usuário de forma clara, objetiva e amigável.
+      Seja um coach financeiro que incentiva e guia o usuário para uma vida financeira mais saudável.
+      Use no máximo 150 palavras.
+
+      **Perfil Financeiro:**
+      - Nome: ${profile.user.name}
+      - Idade: ${profile.user.age}
+      - Profissão: ${profile.user.profession}
+      - Renda Mensal: ${JSON.stringify(profile.incomes)}
+      - Despesas Mensais: ${JSON.stringify(profile.expenses)}
+      - Dívidas: ${JSON.stringify(profile.debts)}
+      - Patrimônio: ${JSON.stringify(profile.assets)}
+      - Metas e Sonhos: ${profile.dreams}
+
+      **Pergunta do Usuário:**
+      "${question}"
+    `;
+    
+      const response = await genAI.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        // temperature: 0.7,
+        // candidateCount: 1
+      });
+    
+      return response.text;
+    } catch (initError) {
+      return `Erro ao inicializar o modelo: ${initError}. Verifique o nome do modelo e chame ModelService.ListModels para ver modelos suportados.`;
+    }
+
+  }

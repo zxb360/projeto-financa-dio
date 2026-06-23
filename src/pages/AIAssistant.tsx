@@ -1,4 +1,4 @@
-import { Send } from 'lucide-react'
+import { Loader2, Send } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { PageHeader } from '../components/PageHeader'
 import { useFinancial } from '../contexts/FinancialContext'
@@ -7,13 +7,14 @@ import { analyzeFinancialProfile } from '../services/aiAssistant'
 interface Message {
   id: string
   role: 'user' | 'assistant'
-  content: string
+  content: string | undefined
 }
 
 // Página que simula um assistente financeiro baseado nas perguntas do usuário.
 export function AIAssistant() {
   const { profile } = useFinancial()
   const [question, setQuestion] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -22,22 +23,28 @@ export function AIAssistant() {
     },
   ])
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    if (!question.trim()) {
+    if (!question.trim() || isLoading) {
       return
     }
 
+    setIsLoading(true)
     const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: question }
-    const answer: Message = {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content: analyzeFinancialProfile(question, profile),
-    }
-
-    setMessages((currentMessages) => [...currentMessages, userMessage, answer])
+    setMessages((currentMessages) => [...currentMessages, userMessage])
     setQuestion('')
+
+    try {
+      const answer: Message = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: await analyzeFinancialProfile(question, profile),
+      }
+      setMessages((currentMessages) => [...currentMessages, answer])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -63,10 +70,19 @@ export function AIAssistant() {
             onChange={(event) => setQuestion(event.target.value)}
             className="min-w-0 flex-1 rounded-lg border border-slate-300 px-4 py-3 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             placeholder="Pergunte sobre dívidas, metas ou gastos"
+            disabled={isLoading}
           />
-          <button className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-700" type="submit">
-            <Send size={18} />
-            Enviar
+          <button
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            type="submit"
+          >
+            {isLoading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <Send size={18} />
+            )}
+            {isLoading ? 'Aguarde...' : 'Enviar'}
           </button>
         </form>
       </section>
