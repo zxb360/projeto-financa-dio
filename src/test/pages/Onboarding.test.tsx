@@ -60,9 +60,9 @@ describe('Onboarding', () => {
 
   it('exibe botão Concluir no último step', async () => {
     renderEmpty(<Onboarding />)
-    const steps = [
-      { label: /nome/i, value: 'Ana Silva' },
-    ]
+    // const steps = [
+    //   { label: /nome/i, value: 'Ana Silva' },
+    // ]
     // Navega rapidamente até o último step preenchendo cada etapa
     const goNext = async (fields: { label: RegExp | string; value: string }[]) => {
       for (const f of fields) {
