@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
-
+import '@testing-library/jest-dom';
 // Mock da variável de ambiente do Vite
 Object.defineProperty(import.meta, 'env', {
   value: { VITE_GEMINI_API_KEY: 'test-key' },
