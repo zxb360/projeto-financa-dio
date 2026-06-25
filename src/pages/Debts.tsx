@@ -16,7 +16,7 @@ export function Debts() {
     <>
       <PageHeader title="Dívidas" description="Organize seus saldos por tipo e prioridade para decidir o próximo passo." />
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <table className="w-full min-w-[640px] text-left">
+        <table className="w-full min-w-\[640px\] text-left">
           <thead className="bg-slate-100 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <tr>
               <th className="px-5 py-4 font-semibold">Tipo</th>
