@@ -12,26 +12,31 @@ import type { FinancialProfile } from '../types/financial'
 // Cada campo é validado para garantir que o usuário insira dados mínimos aceitáveis.
 const fullNameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)+$/
 const textRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s.'-]+$/
+// const currencyRegex = /^\d+(,\d{2})?$/
 
 const onboardingSchema = z.object({
-  name: z.string().trim().regex(fullNameRegex, 'Informe seu nome completo').min(2, 'Informe seu nome'),
-  profession: z.string().trim().min(2, 'Informe sua profissão').regex(textRegex, 'Use apenas letras na profissão'),
-  age: z.coerce.number().int().min(16, 'Informe uma idade válida'),
-  salary: z.coerce.number().min(0),
-  extraIncome: z.coerce.number().min(0),
-  housing: z.coerce.number().min(0),
-  food: z.coerce.number().min(0),
-  transport: z.coerce.number().min(0),
-  health: z.coerce.number().min(0),
-  leisure: z.coerce.number().min(0),
-  creditCard: z.coerce.number().min(0),
-  loans: z.coerce.number().min(0),
-  financing: z.coerce.number().min(0),
-  house: z.coerce.number().min(0),
-  car: z.coerce.number().min(0),
-  motorcycle: z.coerce.number().min(0),
-  investments: z.coerce.number().min(0),
-  emergencyReserve: z.coerce.number().min(0),
+  name: z.string().trim().regex(fullNameRegex, 'Informe seu nome completo').min(2).max(100),
+  profession: z.string().trim().regex(textRegex, 'Preencha com uma profissão válida').min(3, 'Informe sua profissão'),
+  age: z.coerce.number().int('Informe uma idade válida').min(14).max(100),
+  salary: z.coerce.number().min(0, 'Informe um salário válido').max(1000000)
+    .transform((value) => parseFloat(value.toFixed(2)))
+    .refine((value) => isNaN(value) || value > 0, 'Informe um salário válido'),
+  extraIncome: z.coerce.number().min(0).max(1000000)
+    .transform((value) => parseFloat(value.toFixed(2)))
+    .refine((value) => !isNaN(value), 'Informe uma renda extra válida'),
+  housing: z.coerce.number().int("Valor de investimento").min(0),
+  food: z.coerce.number().int("Valor de investimento").min(0),
+  transport: z.coerce.number().int("Valor de investimento").min(0),
+  health: z.coerce.number().int("Valor de investimento").min(0),
+  leisure: z.coerce.number().int("Valor de investimento").min(0),
+  creditCard: z.coerce.number().int("Valor de investimento").min(0),
+  loans: z.coerce.number().int("Valor de investimento").min(0),
+  financing: z.coerce.number().int("Valor de investimento").min(0),
+  house: z.coerce.number().int("Valor de investimento").min(0),
+  car: z.coerce.number().int("Valor de investimento").min(0),
+  motorcycle: z.coerce.number().int("Valor de investimento").min(0),
+  investments: z.coerce.number().int("Valor de investimento").min(0),
+  emergencyReserve: z.coerce.number().int("Valor de investimento").min(0),
   dreams: z.string().min(6, 'Conte pelo menos um objetivo'),
 })
 
@@ -53,21 +58,24 @@ export function Onboarding() {
   } = useForm<OnboardingInput, unknown, OnboardingData>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
-      salary: 0,
-      extraIncome: 0,
-      housing: 0,
-      food: 0,
-      transport: 0,
-      health: 0,
-      leisure: 0,
-      creditCard: 0,
-      loans: 0,
-      financing: 0,
-      house: 0,
-      car: 0,
-      motorcycle: 0,
-      investments: 0,
-      emergencyReserve: 0,
+      name: '',
+      profession: '',
+      age: '',
+      salary: '',
+      extraIncome: '',
+      housing: '',
+      food: '',
+      transport: '',
+      health: '',
+      leisure: '',
+      creditCard: '',
+      loans: '',
+      financing: '',
+      house: '',
+      car: '',
+      motorcycle: '',
+      investments: '',
+      emergencyReserve: '',
     },
   })
 
@@ -151,45 +159,64 @@ export function Onboarding() {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:p-7">
+        <form onSubmit={handleSubmit(onSubmit)} className="rounded-xl border border-slate-200 
+          bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:p-7">
           <h2 className="mb-5 text-xl font-bold">{steps[step]}</h2>
           <div className="grid gap-4 md:grid-cols-2">
             {step === 0 && (
               <>
-                <Input label="Nome" placeholder="Nome completo Ex: Maria Souza" error={errors.name?.message} {...register('name')} />
-                <Input label="Profissão" placeholder="Ex: Analista financeiro" error={errors.profession?.message} {...register('profession')} />
-                <Input label="Idade" placeholder="Ex: 3500" type="number" error={errors.age?.message} {...register('age')} />
+                <Input label="Nome" placeholder="Nome completo Ex: Maria Souza" 
+                  error={errors.name?.message} {...register('name')} />
+                <Input label="Profissão" placeholder="Ex: Analista financeiro" 
+                  error={errors.profession?.message} {...register('profession')} />
+                <Input label="Idade" placeholder="Ex: 22" type="number" 
+                  error={errors.age?.message} {...register('age')} />
               </>
             )}
             {step === 1 && (
               <>
-                <Input label="Salário" type="number" {...register('salary')} />
-                <Input label="Renda extra" type="number" {...register('extraIncome')} />
+                <Input label="Salário" placeholder='Renda mensal' type="number" 
+                  error={errors.salary?.message} {...register('salary')} />
+                <Input label="Renda extra" placeholder='Rendas extras' type="number"
+                  error={errors.extraIncome?.message} {...register('extraIncome')} />
               </>
             )}
             {step === 2 && (
               <>
-                <Input label="Moradia" type="number" {...register('housing')} />
-                <Input label="Alimentação" type="number" {...register('food')} />
-                <Input label="Transporte" type="number" {...register('transport')} />
-                <Input label="Saúde" type="number" {...register('health')} />
-                <Input label="Lazer" type="number" {...register('leisure')} />
+                <Input label="Moradia" type="number" placeholder="Valor mensal moradia"
+                  error={errors.housing?.message} {...register('housing')} />
+                <Input label="Alimentação" type="number" placeholder="Valor mensal alimentação"
+                  error={errors.food?.message} {...register('food')} />
+                <Input label="Transporte" type="number" placeholder="Valor mensal transporte"
+                  error={errors.transport?.message} {...register('transport')} />
+                <Input label="Saúde" type="number" placeholder="Valor mensal saúde"
+                  error={errors.health?.message} {...register('health')} />
+                <Input label="Lazer" type="number" placeholder="Valor mensal lazer"
+                  error={errors.leisure?.message} {...register('leisure')} />
               </>
             )}
             {step === 3 && (
               <>
-                <Input label="Cartão de crédito" type="number" {...register('creditCard')} />
-                <Input label="Empréstimos" type="number" {...register('loans')} />
-                <Input label="Financiamentos" type="number" {...register('financing')} />
+                <Input label="Cartão de crédito" type="number" placeholder='Valor da fatura do mês'
+                error={errors.creditCard?.message} {...register('creditCard')} />
+                <Input label="Empréstimos" type="number" placeholder='Valor total do empréstimo'
+                error={errors.loans?.message} {...register('loans')} />
+                <Input label="Financiamentos" type="number" placeholder='Valor total do financiamento, hipoteca, alienação'
+                error={errors.financing?.message} {...register('financing')} />
               </>
             )}
             {step === 4 && (
               <>
-                <Input label="Casa" type="number" {...register('house')} />
-                <Input label="Carro" type="number" {...register('car')} />
-                <Input label="Moto" type="number" {...register('motorcycle')} />
-                <Input label="Investimentos" type="number" {...register('investments')} />
-                <Input label="Reserva de emergência" type="number" {...register('emergencyReserve')} />
+                <Input label="Casa" type="number" placeholder='Valor da posse'
+                error={errors.house?.message} {...register('house')} />
+                <Input label="Carro" type="number" placeholder='Valor da carro'
+                error={errors.car?.message} {...register('car')} />
+                <Input label="Moto" type="number" placeholder='Valor da moto'
+                error={errors.motorcycle?.message} {...register('motorcycle')} />
+                <Input label="Investimentos" type="number" placeholder='Valor de investimentos'
+                error={errors.investments?.message} {...register('investments')} />
+                <Input label="Reserva de emergência" type="number" placeholder='Valor de reserva de emergência'
+                error={errors.emergencyReserve?.message} {...register('emergencyReserve')} />
               </>
             )}
             {step === 5 && (

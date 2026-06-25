@@ -10,6 +10,8 @@ export interface Income {
   id: string
   name: string
   amount: number
+  category?: string
+  affectsAssets?: boolean
 }
 
 // Categoria de gasto mensal do usuário.
@@ -17,6 +19,8 @@ export interface Expense {
   id: string
   category: string
   amount: number
+  description?: string
+  affectsAssets?: boolean
 }
 
 // Dívida do usuário com prioridade de pagamento.
