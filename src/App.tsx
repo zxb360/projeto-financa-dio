@@ -1,4 +1,4 @@
-import { BrowserRouter } from 'react-router-dom'
+import { HashRouter } from 'react-router-dom'
 import { FinancialProvider } from './contexts/FinancialContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AppRoutes } from './routes/AppRoutes'
@@ -8,9 +8,9 @@ function App() {
   return (
     <ThemeProvider>
       <FinancialProvider>
-        <BrowserRouter>
+        <HashRouter>
           <AppRoutes />
-        </BrowserRouter>
+        </HashRouter>
       </FinancialProvider>
     </ThemeProvider>
   )
