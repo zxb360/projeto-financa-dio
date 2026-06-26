@@ -4,16 +4,18 @@ import { GoogleGenAI } from "@google/genai";
 
 // Acessa a variável de ambiente do Vite.
 // Em aplicações Vite, variáveis expostas ao front-end precisam começar com VITE_.
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 
-if (!apiKey) {
-  throw new Error("A chave VITE_GEMINI_API_KEY não está definida no arquivo .env");
+// Inicializa o SDK apenas quando a chave estiver disponível.
+// Em static sites, a variável precisa estar configurada nas env vars do serviço de hospedagem.
+const genAI = apiKey ? new GoogleGenAI({ apiKey }) : null;
+
+function getClient() {
+  if (!genAI) {
+    throw new Error('Chave VITE_GEMINI_API_KEY não configurada. Adicione a variável de ambiente no painel do Render (ou outro host) e faça um novo deploy.')
+  }
+  return genAI
 }
-
-// Inicializa a instância do SDK do Gemini usada tanto no chat quanto na leitura de extratos.
-const genAI = new GoogleGenAI({
-  apiKey,
-});
 
 // Gera uma resposta conversacional para perguntas financeiras do usuário.
 // A função recebe o perfil inteiro para que a IA responda considerando receitas,
@@ -49,7 +51,7 @@ export async function analyzeFinancialProfile(question: string, profile: Financi
       "${question}"
     `;
     
-      const response = await genAI.models.generateContent({
+      const response = await getClient().models.generateContent({
         model: "gemini-2.5-flash",
         contents: prompt,
         // temperature: 0.7,
@@ -130,7 +132,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
 // O retorno é sempre o mesmo contrato: receitas e gastos prontos para entrar no contexto.
 export async function parseBankStatement(file: File): Promise<ImportedStatementEntries> {
   if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-    const response = await genAI.models.generateContent({
+    const response = await getClient().models.generateContent({
       model: "gemini-2.5-flash",
       contents: [
         statementClassificationPrompt,
@@ -148,7 +150,7 @@ export async function parseBankStatement(file: File): Promise<ImportedStatementE
 
   const statementText = await file.text()
 
-  const response = await genAI.models.generateContent({
+  const response = await getClient().models.generateContent({
     model: "gemini-2.5-flash",
     contents: `${statementClassificationPrompt}\n\nExtrato:\n${statementText}`,
   });
