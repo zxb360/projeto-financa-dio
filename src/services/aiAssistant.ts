@@ -1,33 +1,48 @@
-import type { Expense, FinancialProfile, Income } from '../types/financial';
-import { GoogleGenAI } from "@google/genai";
+import axios from 'axios'
+import type { Expense, FinancialProfile, Income } from '../types/financial'
 
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
 
-// Acessa a variável de ambiente do Vite.
-// Em aplicações Vite, variáveis expostas ao front-end precisam começar com VITE_.
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+const GEMINI_URL = (model: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
 
-// Inicializa o SDK apenas quando a chave estiver disponível.
-// Em static sites, a variável precisa estar configurada nas env vars do serviço de hospedagem.
-const genAI = apiKey ? new GoogleGenAI({ apiKey }) : null;
-
-function getClient() {
-  if (!genAI) {
-    throw new Error('Chave VITE_GEMINI_API_KEY não configurada. Adicione a variável de ambiente no painel do Render (ou outro host) e faça um novo deploy.')
+async function generate(prompt: string): Promise<string> {
+  if (!apiKey) {
+    throw new Error('Chave VITE_GEMINI_API_KEY não configurada. Adicione a variável de ambiente no painel do Render e faça um novo deploy.')
   }
-  return genAI
+
+  const response = await axios.post(GEMINI_URL('gemini-2.5-flash'), {
+    contents: [{ parts: [{ text: prompt }] }],
+  })
+
+  return response.data.candidates[0].content.parts[0].text ?? 'Nenhuma resposta gerada.'
 }
 
-// Gera uma resposta conversacional para perguntas financeiras do usuário.
-// A função recebe o perfil inteiro para que a IA responda considerando receitas,
-// despesas, dívidas, patrimônio e sonhos já cadastrados.
+async function generateWithFile(prompt: string, mimeType: string, base64Data: string): Promise<string> {
+  if (!apiKey) {
+    throw new Error('Chave VITE_GEMINI_API_KEY não configurada.')
+  }
+
+  const response = await axios.post(GEMINI_URL('gemini-2.5-flash'), {
+    contents: [
+      {
+        parts: [
+          { text: prompt },
+          { inlineData: { mimeType, data: base64Data } },
+        ],
+      },
+    ],
+  })
+
+  return response.data.candidates[0].content.parts[0].text ?? ''
+}
+
 export async function analyzeFinancialProfile(question: string, profile: FinancialProfile) {
   try {
     const totalIncomes = profile.incomes.reduce((sum, inc) => sum + inc.amount, 0)
     const totalExpenses = profile.expenses.reduce((sum, exp) => sum + exp.amount, 0)
     const balance = totalIncomes - totalExpenses
 
-    // Prompt para a IA com o perfil do usuário.
-    // O limite de 150 palavras deixa a resposta objetiva e evita textos longos no chat.
     const prompt = `
       Você é um assistente financeiro chamado FinCoach AI.
       Analise o seguinte perfil financeiro e responda à pergunta do usuário de forma clara, objetiva e amigável.
@@ -49,30 +64,19 @@ export async function analyzeFinancialProfile(question: string, profile: Financi
 
       **Pergunta do Usuário:**
       "${question}"
-    `;
-    
-      const response = await getClient().models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-        // temperature: 0.7,
-        // candidateCount: 1
-      });
-    
-      return response.text;
-    } catch (initError) {
-      return `Erro ao inicializar o modelo: ${initError}. Verifique o nome do modelo e chame ModelService.ListModels para ver modelos suportados.`;
-    }
+    `
 
+    return await generate(prompt)
+  } catch (error) {
+    return `Erro ao consultar a IA: ${error instanceof Error ? error.message : error}`
   }
+}
 
 export interface ImportedStatementEntries {
   incomes: Array<Omit<Income, 'id'>>
   expenses: Array<Omit<Expense, 'id'>>
 }
 
-// Prompt reaproveitado para CSV, TXT e PDF.
-// Ele força a IA a devolver JSON porque o restante do app precisa salvar dados estruturados,
-// não uma resposta em texto livre.
 const statementClassificationPrompt = `
   Você é um classificador de extratos bancários brasileiros.
   Leia o extrato enviado e retorne apenas JSON válido no formato:
@@ -89,8 +93,6 @@ const statementClassificationPrompt = `
   - Ignore saldo, cabeçalho, rodapé e linhas sem valor financeiro.
 `
 
-// Alguns modelos podem devolver texto antes/depois do JSON.
-// Esta função recorta apenas o primeiro bloco de objeto para permitir o JSON.parse.
 function extractJson(content: string) {
   const start = content.indexOf('{')
   const end = content.lastIndexOf('}')
@@ -102,9 +104,7 @@ function extractJson(content: string) {
   return content.slice(start, end + 1)
 }
 
-// Normaliza a resposta da IA.
-// Mesmo que alguma chave venha ausente ou em formato inesperado, o app recebe arrays seguros.
-function parseImportedEntries(content: string) {
+function parseImportedEntries(content: string): ImportedStatementEntries {
   const parsed = JSON.parse(extractJson(content)) as ImportedStatementEntries
 
   return {
@@ -113,47 +113,21 @@ function parseImportedEntries(content: string) {
   }
 }
 
-// Converte arquivos binários para base64.
-// Isso é necessário para enviar PDFs ao Gemini usando inlineData no navegador.
 function arrayBufferToBase64(buffer: ArrayBuffer) {
   let binary = ''
   const bytes = new Uint8Array(buffer)
-
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte)
-  })
-
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte) })
   return btoa(binary)
 }
 
-// Classifica extratos anexados pelo usuário.
-// - PDF: enviado como arquivo binário/base64 para a IA interpretar o documento.
-// - CSV/TXT: lidos como texto e enviados no próprio prompt.
-// O retorno é sempre o mesmo contrato: receitas e gastos prontos para entrar no contexto.
 export async function parseBankStatement(file: File): Promise<ImportedStatementEntries> {
   if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-    const response = await getClient().models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        statementClassificationPrompt,
-        {
-          inlineData: {
-            mimeType: 'application/pdf',
-            data: arrayBufferToBase64(await file.arrayBuffer()),
-          },
-        },
-      ],
-    });
-
-    return parseImportedEntries(response.text ?? '')
+    const base64 = arrayBufferToBase64(await file.arrayBuffer())
+    const text = await generateWithFile(statementClassificationPrompt, 'application/pdf', base64)
+    return parseImportedEntries(text)
   }
 
   const statementText = await file.text()
-
-  const response = await getClient().models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `${statementClassificationPrompt}\n\nExtrato:\n${statementText}`,
-  });
-
-  return parseImportedEntries(response.text ?? '')
+  const text = await generate(`${statementClassificationPrompt}\n\nExtrato:\n${statementText}`)
+  return parseImportedEntries(text)
 }
