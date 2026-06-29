@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { Expense, FinancialProfile, Income } from '../types/financial'
 
 function getAiApiUrl(): string {
-  return (import.meta.env.VITE_AI_API_URL as string | undefined)?.trim() || 'https://projeto-financa-dio-1.onrender.com/assistente-ia'
+  return (import.meta.env.VITE_AI_API_URL as string | undefined)?.trim() || 'https://fincoach-ai-backend.onrender.com/assistente-ia'
 }
 
 type AssistantApiResponse = {
