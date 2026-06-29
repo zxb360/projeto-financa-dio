@@ -1,29 +1,58 @@
 import axios from 'axios'
 import type { Expense, FinancialProfile, Income } from '../types/financial'
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
+function getAiApiUrl(): string {
+  return (import.meta.env.VITE_AI_API_URL as string | undefined)?.trim() || 'http://localhost:3000/assistente-ai'
+}
 
-const GEMINI_URL = (model: string) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+type AssistantApiResponse = {
+  text?: string
+  response?: string
+  message?: string
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{ text?: string }>
+    }
+  }>
+}
 
-async function generate(prompt: string): Promise<string> {
-  if (!apiKey) {
-    throw new Error('Chave VITE_GEMINI_API_KEY não configurada. Adicione a variável de ambiente no painel do Render e faça um novo deploy.')
+function extractGeneratedText(data: AssistantApiResponse | string | undefined): string {  
+  // Se a API externa (NestJS) retornar o texto diretamente (string pura), usamos essa resposta.
+  if (typeof data === 'string' && data.trim()) {
+    return data
+  } else if (typeof data !== 'object' || data === null) {
+    return 'A IA não forneceu uma resposta inteligível.'
   }
 
-  const response = await axios.post(GEMINI_URL('gemini-2.5-flash'), {
-    contents: [{ parts: [{ text: prompt }] }],
+  // Tenta extrair o texto da estrutura de resposta do Gemini (ou similar).
+  const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text
+  if (typeof candidateText === 'string' && candidateText.trim()) {
+    return candidateText
+  }  
+
+  // Fallback para outros formatos comuns de resposta de APIs (NestJS pode usar 'text', 'response' ou 'message').
+  const directText = data?.text ?? data?.response ?? data?.message
+  if (typeof directText === 'string' && directText.trim()) {
+    return directText
+  }
+  
+  return 'Nenhuma resposta gerada.'
+}
+
+async function generate(prompt: string): Promise<string> {
+  const response = await axios.post(getAiApiUrl(), {
+    prompt,
+    model: 'gemini-2.5-flash',
+    contents: { parts: [{ text: prompt }] },
   })
 
-  return response.data.candidates[0].content.parts[0].text ?? 'Nenhuma resposta gerada.'
+  return extractGeneratedText(response.data as AssistantApiResponse)
 }
 
 async function generateWithFile(prompt: string, mimeType: string, base64Data: string): Promise<string> {
-  if (!apiKey) {
-    throw new Error('Chave VITE_GEMINI_API_KEY não configurada.')
-  }
-
-  const response = await axios.post(GEMINI_URL('gemini-2.5-flash'), {
+  const response = await axios.post(getAiApiUrl(), {
+    prompt,
+    model: 'gemini-2.5-flash',
     contents: [
       {
         parts: [
@@ -34,7 +63,7 @@ async function generateWithFile(prompt: string, mimeType: string, base64Data: st
     ],
   })
 
-  return response.data.candidates[0].content.parts[0].text ?? ''
+  return extractGeneratedText(response.data as AssistantApiResponse)
 }
 
 export async function analyzeFinancialProfile(question: string, profile: FinancialProfile) {
@@ -92,7 +121,7 @@ const statementClassificationPrompt = `
   - affectsAssets deve ser true apenas para Investimentos, Poupança, Consórcio, Bens e Reserva de emergência.
   - Ignore saldo, cabeçalho, rodapé e linhas sem valor financeiro.
 `
-
+// - Responda APENAS com o objeto JSON, sem nenhum texto ou explicação adicional.
 function extractJson(content: string) {
   const start = content.indexOf('{')
   const end = content.lastIndexOf('}')
@@ -105,11 +134,19 @@ function extractJson(content: string) {
 }
 
 function parseImportedEntries(content: string): ImportedStatementEntries {
-  const parsed = JSON.parse(extractJson(content)) as ImportedStatementEntries
-
-  return {
-    incomes: Array.isArray(parsed.incomes) ? parsed.incomes : [],
-    expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+  try {
+    const jsonString = extractJson(content)
+    const parsed = JSON.parse(jsonString) as Partial<ImportedStatementEntries>
+  
+    return {
+      incomes: Array.isArray(parsed.incomes) ? parsed.incomes : [],
+      expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+    }
+  } catch (error: unknown) {
+    console.error('Erro ao parsear JSON da IA:', error)
+    throw new Error('A IA não retornou um JSON válido ou no formato esperado.', {
+      cause: error,
+    })
   }
 }
 

@@ -1,5 +1,6 @@
-import { FileText, Loader2, Mic, Send, Upload } from 'lucide-react'
+import { FileText, Mic, Send, Upload } from 'lucide-react'
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { LoaderCircle } from '../components/LoaderCircle'
 import { PageHeader } from '../components/PageHeader'
 import { useFinancial } from '../contexts/FinancialContext'
 import { analyzeFinancialProfile, parseBankStatement } from '../services/aiAssistant'
@@ -52,6 +53,8 @@ export function AIAssistant() {
       content: 'Olá! Posso ajudar você a entender prioridades, dívidas, metas e próximos passos financeiros.',
     },
   ])
+  console.log(messages);
+  
 
   // Envia uma pergunta digitada pelo usuário para a IA e adiciona a resposta no histórico.
   // O estado isLoading evita cliques repetidos enquanto a chamada assíncrona está em andamento.
@@ -169,7 +172,7 @@ export function AIAssistant() {
             disabled={isImporting}
             className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
-            {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+            {isImporting ? <LoaderCircle size={16} label="Importando" /> : <Upload size={16} />}
             {isImporting ? 'Importando...' : 'Anexar extrato'}
           </button>
           <span className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
@@ -214,7 +217,7 @@ export function AIAssistant() {
             type="submit"
           >
             {isLoading ? (
-              <Loader2 size={18} className="animate-spin" />
+              <LoaderCircle size={18} label="Aguarde" />
             ) : (
               <Send size={18} />
             )}
