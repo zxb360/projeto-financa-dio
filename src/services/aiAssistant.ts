@@ -66,6 +66,7 @@ async function generateWithFile(prompt: string, mimeType: string, base64Data: st
   return extractGeneratedText(response.data as AssistantApiResponse)
 }
 
+
 export async function analyzeFinancialProfile(question: string, profile: FinancialProfile) {
   try {
     const totalIncomes = profile.incomes.reduce((sum, inc) => sum + inc.amount, 0)
