@@ -35,7 +35,7 @@ export function Dashboard() {
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <h3 className="mb-4 text-lg font-bold text-slate-950 dark:text-slate-100">Distribuição de gastos</h3>
-          <div className="h-72">
+          <div className="h-72 min-h-72">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={profile.expenses} dataKey="amount" nameKey="category" innerRadius={58} outerRadius={92} paddingAngle={3}>
@@ -43,7 +43,7 @@ export function Dashboard() {
                     <Cell key={expense.id} fill={chartColors[index % chartColors.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} isAnimationActive={false} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -51,13 +51,13 @@ export function Dashboard() {
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <h3 className="mb-4 text-lg font-bold text-slate-950 dark:text-slate-100">Receitas versus despesas</h3>
-          <div className="h-72">
+          <div className="h-72 min-h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={comparisonData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" />
                 <YAxis tickFormatter={(value) => `R$ ${Number(value) / 1000}k`} />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} isAnimationActive={false} />
                 <Bar dataKey="valor" radius={[8, 8, 0, 0]} fill="#0891b2" />
               </BarChart>
             </ResponsiveContainer>
